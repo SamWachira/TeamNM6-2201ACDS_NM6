@@ -32,6 +32,12 @@ import re
 import string
 import html
 import nltk
+
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+
 from nltk.tokenize import word_tokenize, TreebankWordTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.tag.perceptron import PerceptronTagger
@@ -296,7 +302,7 @@ def main():
 		tweet_text_POS_tag = [(word, get_pos(tag)) for (word, tag) in tweet_text_POS_tag]
 
 		lemmatizer = WordNetLemmatizer()		# creating an instance of the lemmatizer
-		#tweet_text_token = lemmatizer.lemmatize(tweet_text_token, 1)
+		
 		tweet_text_token = [lemmatizer.lemmatize(token) for token in tweet_text_token]		# gets the lemma of each word
 
 		tweet_text_token =  [word for word in tweet_text_token if not word in stopwords.words('english') and word != 'not']
