@@ -28,6 +28,14 @@
 import streamlit as st
 import joblib,os
 from PIL import Image
+import re
+import string
+import html
+import nltk
+from nltk.tokenize import word_tokenize, TreebankWordTokenizer
+from nltk.stem import WordNetLemmatizer 
+from nltk.corpus import stopwords, wordnet 
+
 
 # Data dependencies
 import pandas as pd
@@ -84,7 +92,7 @@ def main():
 		st.markdown("***")	# Adds a separator
 		
 		# Team members
-		team_name = "The NMAnalytica Team"
+		team_name = "The Team"
 		st.subheader(team_name)
 		st.markdown("##")	# Adds space
 		st.image(image=team_image, caption="Members of the Team")
@@ -118,8 +126,8 @@ def main():
 		st.markdown("##")
 		st.markdown("##")
 		planet_solver = "**_PLANET_ SOLVER** is a Machine Learning Model that helps companies \
-						to identify weather or not a person believes in climate change based on \
-						their tweet and could possibly be converted to a new customer"
+						to identify whether or not a person believes in climate change based on \
+						their tweet and could possibly be converted to a new customer."
 		st.markdown(planet_solver)
 
 
@@ -169,7 +177,7 @@ def main():
 		if eda_selection == "Tweet Distribution":
 
 			st.subheader("Tweet Distribution")
-			text1 = "The image below shows a plot depicting how the tweets are distributed across each class"
+			text1 = "The image below shows a plot depicting how the tweets are distributed across each class."
 			st.markdown(text1)
 			tweet_dist_image = Image.open('../resources/plot_images/tweet_distn.png')
 			st.image(image=tweet_dist_image, caption="Tweet distribution")
@@ -244,10 +252,60 @@ def main():
 		# Creating a text box for user input
 		tweet_text = st.text_area("Enter Text","Type Here")
 
+
+		# cleaning the input text before passing it into the machine learning model for prediction
+		tweet_text = tweet_text.replace('\n', '')
+		tweet_text = html.unescape(tweet_text)
+
+		# removing special characters from text
+		tweet_text = re.sub(r"(@[A-Za-z0-9_]+)|[^\w\s]|http\S+", "", tweet_text)
+
+		tweet_text = tweet_text.lower()		# converts text to lowercase
+		tokeniser = TreebankWordTokenizer()		# creating an instance of the TreebankWordTokenizer
+		tweet_text_token = tokeniser.tokenize(tweet_text)		# transforming input into tokens
+
+		#This function obtains a pos tag and returns the part of speech.
+			#Input:
+			#	tag: POS tag
+			#	datatype: str
+			#Output:
+			#	wordnet.pos: Part of Speech
+			#	datatype: str
+		
+
+		def get_pos(tag):
+			if tag.startswith('V'):
+				return wordnet.VERB
+
+			elif tag.startswith('J'):
+				return wordnet.ADJ
+
+			elif tag.startswith('R'):
+				return wordnet.ADV
+			
+			elif tag.startswith('N'):
+				return wordnet.NOUN
+			
+			else:
+				return wordnet.NOUN
+
+		tweet_text_POS_tag = nltk.tag.pos_tag(tweet_text_token)		# gets the part of speech tag of each word in the sentence
+
+		tweet_text_POS_tag = [(word, get_pos(tag)) for (word, tag) in tweet_text_POS_tag]
+
+		lemmatizer = WordNetLemmatizer()		# creating an instance of the lemmatizer
+		#tweet_text_token = lemmatizer.lemmatize(tweet_text_token, 1)
+		tweet_text_token = [lemmatizer.lemmatize(token) for token in tweet_text_token]		# gets the lemma of each word
+
+		tweet_text_token =  [word for word in tweet_text_token if not word in stopwords.words('english') and word != 'not']
+
+		tweet_text_token = ' '.join(tweet_text_token)
+
+
 		model_option = ["Logistic Regression", "Linear Support Vector Classifier", "Random Forest Classifier", "Naive Bayes",
 							"K Nearest Neighbour Classifier", "Linear SVC using Optimal Hyperparameters"]	# A list of available models that can be used for the classification
 
-		model_selection = st.selectbox("Select a model type you will like to use as the classifier", model_option)
+		model_selection = st.selectbox("Select a model type you will like to use as the classifier.", model_option)
 
 			# Selecting from multiple models
 			# If Logistic Regression is selected
@@ -288,10 +346,10 @@ def main():
 
 			# A dictionary to show a more human interpretation of result
 
-			result_dict = {'News': 'This tweet links to factual news about climate change',
-							'Pro': 'This tweet supports the belief of man-made climate change',
-							'Neutral': 'This tweet neither supports nor refutes the belief of man-made climate change',
-							'Anti': 'The tweet does not believe in man-made climate change'
+			result_dict = {'News': 'This tweet links to factual news about climate change.',
+							'Pro': 'This tweet supports the belief of man-made climate change.',
+							'Neutral': 'This tweet neither supports nor refutes the belief of man-made climate change.',
+							'Anti': 'The tweet does not believe in man-made climate change.'
 			}
 			result = result_dict[prediction[0]]
 			st.success("Text Categorized as: {}".format(prediction[0]))
