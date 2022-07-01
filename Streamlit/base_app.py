@@ -33,7 +33,8 @@ import string
 import html
 import nltk
 from nltk.tokenize import word_tokenize, TreebankWordTokenizer
-from nltk.stem import WordNetLemmatizer 
+from nltk.stem import WordNetLemmatizer
+from nltk.tag.perceptron import PerceptronTagger
 from nltk.corpus import stopwords, wordnet 
 
 
@@ -289,7 +290,8 @@ def main():
 			else:
 				return wordnet.NOUN
 
-		tweet_text_POS_tag = nltk.tag.pos_tag(tweet_text_token)		# gets the part of speech tag of each word in the sentence
+		pos_tag = PerceptronTagger()
+		tweet_text_POS_tag = pos_tag.tag(tweet_text_token)		# gets the part of speech tag of each word in the sentence
 
 		tweet_text_POS_tag = [(word, get_pos(tag)) for (word, tag) in tweet_text_POS_tag]
 
